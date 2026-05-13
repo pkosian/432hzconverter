@@ -1,7 +1,7 @@
 import os, shutil, threading, pydub, mutagen, time
 
-inputPath = ""
-outputPath = ""
+inputPath = "" # Ex: 'C:/Users/.../Music/'
+outputPath = "" # Ex: 'C:/Users/.../Music/432/'
 minRating = 5
 vel = 432 / 440
 overwrite = False
