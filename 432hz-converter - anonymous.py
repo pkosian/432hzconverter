@@ -26,29 +26,30 @@ def speed_change(sound, speed=1.0):
 def slowDownFile(f):
     rating = 0
     fpath = f.path
+    fname = f.name
     tagfile = mutagen.File(fpath)
     try:
         rating = int(tagfile['TXXX:POPM'].text[0])
     except:
         pass
     if rating >= minRating:
-        if justcopy in f.name:
-            shutil.copy(f.path, outputPath)
-            print("Copied: ", f.name)
-        elif overwrite or not f.name[:-4] + append + filetype in existingFileNames:
-            print("Converting: ", f.name)
+        if justcopy in fname:
+            shutil.copy(fpath, outputPath)
+            print("Copied: ", fname)
+        elif overwrite or not fname[:-4] + append + filetype in existingFileNames:
+            print("Converting: ", fname)
             af = pydub.AudioSegment.from_file(fpath)
             afNew = speed_change(af, vel)
-            newpath = outputPath + f.name[:-4] + append + filetype
+            newpath = outputPath + fname[:-4] + append + filetype
             afNew.export(newpath, format = 'mp3', parameters=["-q:a", "0"])
             newTagFile = mutagen.File(newpath)
             newTagFile = tagfile
             newTagFile.save(newpath)
-            print("Finished: ", f.name)
+            print("Finished: ", fname)
         else:
-            print("File already exists: " + f.name)
+            print("File already exists: " + fname)
     else:
-        print("Rating not high enough: ", f.name)
+        print("Rating not high enough: ", fname)
 
 threads = []
 d = os.scandir(inputPath)
