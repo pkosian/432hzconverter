@@ -1,12 +1,12 @@
 import os, shutil, threading, pydub, mutagen, time
 
-inputPath = "" # Ex: 'C:/Users/.../Music/'
-outputPath = "" # Ex: 'C:/Users/.../Music/432/'
-minRating = 5
+input_path = "" # Ex: 'C:/Users/.../Music/'
+output_path = "" # Ex: 'C:/Users/.../Music/432/'
+min_rating = 5
 vel = 432 / 440
 overwrite = False
 append = " (432hz)"
-justcopy = "432hz"
+just_copy = "432hz"
 filetype = ".mp3"
 maxthreads = 16
 
@@ -18,39 +18,39 @@ def speed_change(sound, speed=1.0):
 
 def slowDownFile(f):
     rating = 0
-    fpath = f.path
-    fname = f.name
-    tagfile = mutagen.File(fpath)
+    f_path = f.path
+    f_name = f.name
+    tag_file = mutagen.File(f_path)
     try:
-        rating = int(tagfile['TXXX:POPM'].text[0])
+        rating = int(tag_file['TXXX:POPM'].text[0])
     except:
         pass
-    if rating >= minRating:
-        if justcopy in fname:
-            shutil.copy(fpath, outputPath)
-            print("Copied: ", fname)
-        elif overwrite or not fname[:-4] + append + filetype in existingFileNames:
-            print("Converting: ", fname)
-            af = pydub.AudioSegment.from_file(fpath)
-            afNew = speed_change(af, vel)
-            newpath = outputPath + fname[:-4] + append + filetype
-            afNew.export(newpath, format = 'mp3', parameters=["-q:a", "0"])
-            newTagFile = mutagen.File(newpath)
-            newTagFile = tagfile
-            newTagFile.save(newpath)
-            print("Finished: ", fname)
+    if rating >= min_rating:
+        if just_copy in f_name:
+            shutil.copy(f_path, output_path)
+            print("Copied: ", f_name)
+        elif overwrite or not f_name[:-4] + append + filetype in existing_file_names:
+            print("Converting: ", f_name)
+            af = pydub.AudioSegment.from_file(f_path)
+            af_new = speed_change(af, vel)
+            new_path = output_path + f_name[:-4] + append + filetype
+            af_new.export(new_path, format = 'mp3', parameters=["-q:a", "0"])
+            new_tag_file = mutagen.File(new_path)
+            new_tag_file = tag_file
+            new_tag_file.save(new_path)
+            print("Finished: ", f_name)
         else:
-            print("File already exists: " + fname)
+            print("File already exists: " + f_name)
     else:
-        print("Rating not high enough: ", fname)
+        print("Rating not high enough: ", f_name)
 
 threads = []
-d = os.scandir(inputPath)
+d = os.scandir(input_path)
 try:
-    os.mkdir(outputPath)
+    os.mkdir(output_path)
 except:
     pass
-existingFileNames = [n.name for n in os.scandir(outputPath)]
+existing_file_names = [n.name for n in os.scandir(output_path)]
 for f in d:
     t = threading.Thread(target=slowDownFile, args=(f,))
     threads.append(t)
