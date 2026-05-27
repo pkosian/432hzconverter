@@ -1,9 +1,10 @@
 input_path = "" # Ex: 'C:/Users/.../Music/'
 output_path = "" # Ex: 'C:/Users/.../Music/432/'
-min_rating = 0
-vel = 432 / 440
 overwrite = False
+min_rating = 0
+remove_remnants = False
+maxthreads = 16
+vel = 432 / 440
 append = " (432hz)"
 just_copy = "432hz"
 filetype = ".mp3"
-maxthreads = 16
