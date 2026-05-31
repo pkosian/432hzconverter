@@ -1,14 +1,14 @@
-import os, shutil, threading, pydub, mutagen, time, settings
+import os, shutil, threading, pydub, mutagen, time, settings, queue
 
-def speed_change(sound, speed=1.0):
+def speed_change (sound, speed=1.0):
     sound_with_altered_frame_rate = sound._spawn(sound.raw_data, overrides={
         "frame_rate": int(sound.frame_rate * speed)
     })
     return sound_with_altered_frame_rate.set_frame_rate(sound.frame_rate)
 
-def slowDownFile(f):
-    f_path = f.path
+def slowDownFile (f):
     f_name = f.name
+    f_path = f.path
     print("Converting: ", f_name)
     af = pydub.AudioSegment.from_file(f_path)
     af_new = speed_change(af, settings.vel)
@@ -19,9 +19,30 @@ def slowDownFile(f):
     new_tag_file.save(new_path)
     print("Finished converting: ", f_name)
 
-def copyFile(f):
+def copyFile (f):
     shutil.copy(f.path, settings.output_path)
     print("Copied: ", f.name)
+
+def checkConditions (f, q):
+    tag_file = mutagen.File(f.path)
+    rating = 0
+    try:
+        rating = int(tag_file['TXXX:POPM'].text[0])
+    except:
+        pass
+    if rating >= settings.min_rating:
+        if settings.just_copy in f.name:
+            q.put(["to_copy", f])
+        elif settings.overwrite:
+            q.put(["to_convert", f])
+        elif not (f.name[:-4] + settings.append + settings.filetype) in [o.name for o in output_array]:
+            q.put(["to_convert", f])
+        else:
+            if settings.remove_remnants:
+                print("File already exists: " + f.name)
+                q.put(["already_exists", f])
+    else:
+        print("Rating not high enough: " + f.name)
 
 if __name__ == "__main__":
     input = []
@@ -44,29 +65,28 @@ if __name__ == "__main__":
     for f in output:
         output_array.append(f)
     # Gather files for conversion
+    gather_threads = []
+    q = queue.Queue()
+    for f in input_array:
+        t = threading.Thread(target=checkConditions, args=(f,q))
+        gather_threads.append(t)
+    for gt in gather_threads:
+        while len([t for t in gather_threads if t.is_alive()]) == settings.maxthreads:
+            time.sleep(0.05)
+        gt.start()
+    for gt in gather_threads:
+        gt.join()
     to_convert = []
     to_copy = []
     already_exists = []
-    for f in input_array:
-        tag_file = mutagen.File(f.path)
-        rating = 0
-        try:
-            rating = int(tag_file['TXXX:POPM'].text[0])
-        except:
-            pass
-        if rating >= settings.min_rating:
-            if settings.just_copy in f.name:
-                to_copy.append(f)
-            elif settings.overwrite:
-                to_convert.append(f)
-            elif not (f.name[:-4] + settings.append + settings.filetype) in [o.name for o in output_array]:
-                to_convert.append(f)
-            else:
-                if settings.remove_remnants:
-                    already_exists.append(f)
-                    print("File already exists: " + f.name)
-        else:
-            print("Rating not high enough: " + f.name)
+    while not q.empty():
+        result = q.get()
+        if result[0] == "to_convert":
+            to_convert.append(result[1])
+        elif result[0] == "to_copy":
+            to_copy.append(result[1])
+        elif result[0] == "already_exists":
+            already_exists.append(result[1])
     # Delete remnant files
     for f in output_array:
         new_files = to_convert + to_copy + already_exists
