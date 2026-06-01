@@ -72,8 +72,6 @@ if __name__ == "__main__":
         while len([t for t in gather_threads if t.is_alive()]) == settings.maxthreads:
             time.sleep(0.05)
         gt.start()
-    for gt in gather_threads:
-        gt.join()
     to_convert = []
     to_copy = []
     already_exists = []
@@ -85,6 +83,8 @@ if __name__ == "__main__":
             to_copy.append(result[1])
         elif result[0] == "already_exists":
             already_exists.append(result[1])
+    for gt in gather_threads:
+        gt.join()
     # Delete remnant files
     for f in output_array:
         new_files = to_convert + to_copy + already_exists
