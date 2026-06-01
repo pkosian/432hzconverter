@@ -42,6 +42,9 @@ def checkConditions (f, q):
     else:
         print("Rating not high enough: " + f.name)
 
+def getActiveThreadCount (threads):
+    return len([t for t in threads if t.is_alive()])
+
 if __name__ == "__main__":
     input = []
     output = []
@@ -65,17 +68,18 @@ if __name__ == "__main__":
     # Gather files for conversion
     gather_threads = []
     q = queue.Queue()
+    q.put(["initialize queue"]) # Pseudo element to prevent skipping, see line 82
     for f in input_array:
         t = threading.Thread(target=checkConditions, args=(f,q))
         gather_threads.append(t)
     for gt in gather_threads:
-        while len([t for t in gather_threads if t.is_alive()]) == settings.maxthreads:
+        while getActiveThreadCount(gather_threads) == settings.maxthreads:
             time.sleep(0.05)
         gt.start()
     to_convert = []
     to_copy = []
     already_exists = []
-    while not q.empty():
+    while not q.empty(): # Would only work if a thread is fast enough to fill the queue, hence prefilling it with a pseudo element
         result = q.get()
         if result[0] == "to_convert":
             to_convert.append(result[1])
@@ -100,7 +104,7 @@ if __name__ == "__main__":
         t = threading.Thread(target=slowDownFile, args=(f,))
         threads.append(t)
     for t in threads:
-        while len([t for t in threads if t.is_alive()]) == settings.maxthreads:
+        while getActiveThreadCount(threads) == settings.maxthreads:
             time.sleep(0.05)
         t.start()
     for t in threads:
